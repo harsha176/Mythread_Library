@@ -1,0 +1,135 @@
+Group Information:
+-----------------------------
+hmalipa Harshavardhan Reddy Malipatel
+jjohn   Joice John
+srmale  Santosh Reddy Male
+
+
+Build steps:
+----------------------------
+Compiling:
+      make a5
+This command compiles all the files related to thread library and creates and executable "driver" which runs our testcase defined in mythread_test.c
+
+
+Creating library:
+      make bundle
+This command creates mythreadlib.a library containing all the object files details of their corrosponding .c and .h files are given below.
+      
+Clean: 
+      make clean
+This command cleans all the object files and executables related to thread library as well as a3 and a4 executables
+
+
+Modules:
+-----------------------------
+1. Queue ADT
+
+This module implements Queue ADT as a single linked list this is used by thread library to store running thread thread identifiers, more specifically mythread_t* data type. 
+
+Files:
+queue.h
+queue.c
+queue_test.c
+
+       These files implement queue ADT. Queue is used for FIFO scheduling of threads.
+
+2. Futex:
+
+This module provide synchronization primitives. This was given as part of assignment files. Futex_up and Futex_down functions were extensively used in thread library to suspend and resume threads.
+
+Files:
+futex.h
+futex.c
+futex_inline.h
+myatomic.h
+
+3. Thread library
+This module implements thread library using Queue ADT and futex API. Implementation details are provided below.
+
+Files:
+mythread.h
+mythread.c
+
+4. Test cases
+     
+   These files use thread library to simulate threads. mytest_thread.c creates 10 threads and each thread prints "Thread:id Hello World-i" for mythread id number of times. Main thread creates two keys one for name and other for id each thread sets their own values for each key and then prints after printing above "Hello world output" test_juggling.c creates two threads and each thread prints and gives control to other thread and other thread does samething. It terminates after certain number of iterations. Test independent thread creates a thread and main doesn't do a join it doesn't wait till the other thread exits. 
+
+Files:
+mythread_test.c
+test_juggling.c
+test_independent_threads.c
+
+
+Implementation Overview:
+----------------------------------
+1. TCB of each thread is a structure that maintains the state, threadid, futex for that particular thread, a join queue, a stack. 
+2. The state of the thread can be any one of RUNNING_S, READY_S, BLOCKED_S.
+3. Thread id poineters are maitained in ready queue and join queue. These pointers point to its TCB in thread table.
+3. Thread table is a dynamic array which maintains pointers to the TCBs of the threads.
+4. Current_tid maintains the thread id of the current thread under execution.
+5. Idle thread is used for scheduling the threads using the ready queue.
+6. A func_wrapper_t is a structure which maintains the funtion name to be executed by the thread and also the arguments that are to be passed to it.
+7. At any point of time, only one thread will be under execution. The remaining threads will all be waiting on futex. 
+8. If the current thread yields, the idle thread is resumed by using futex_up on the futex of idle thread  and the current thread will be suspended by using futex_down on its own futex.
+9. The idle thread now dequeues the first thread present in the ready queue and resumes its execution. The idle thread will suspend on its own futex.
+10. A key management table is maintained to store the pointers to the structures key management blocks.
+11. The key management block consists of key id, destructor function and a pointer to value table.
+12. The value table contains the values of the each thread corresponding to the selected key and are indexed by thread id. The value table size will alwasys be equal to the number of threads.
+
+
+    
+Implementation details of each function
+-----------------------------------------
+
+1. mythread_create 
+a. Before performing any operation using the thread library, the library is initialised by creating the main and idle threads. 
+b. Allocates new TCB for the thread.
+c. A new entry is created dynamically in the thread table.
+d. __create_thread() is called which makes use of clone() to spawn a new thread.
+e. The function of each thread is not invoked directly, instead, it is wrapped in the thread base function.
+
+
+2. mythread_self    
+a. Returns the thread id of the calling thread.
+
+3. mythread_yield
+a. It makes the idle thread resume its execution by executing futex_up on the futex of the idle thread. Also, the current thread suspends itself by executing futex_down on its own futex.
+
+4. mythread_join
+a. The calling thread is added to the join queue of the target thread. Also, the idle thread is resumed before the calling thread yields. The stae of the calling thread is  changed to BLOCKED_S.
+
+ 
+5. mythread_exit
+a. The threads present in the join queue of the invoking thread are added to the ready queue.
+b. The current thread is marked to be deleted. Its resources are freed by the idle thread.
+c. The thread finally exits.
+
+
+6. mythread_key_create
+a. Memory is allocated to the key management table.
+b. Memory is allocated to the key management block and is also initialised.
+c. Memory is allocated to the value table and are initialised to NULL.
+
+7. mythread_key_delete
+a. Free memory for the value table.
+b. Memory is freed for the key management block.
+c. Memory is freed for the key management table.
+ 
+8. mythread_setspecific
+a. The function sets the value of the key in the value table for the invoking thread. 
+
+9. mythread_getspecific 
+a. It retrieves the value of the key present in the value table for the invoking thread.
+
+
+P5.c
+a. It is a test case for the mythread library.
+b. Two keys key id and name are created in the main thread using mythread_key_create.
+c. Ten threads are created using mythread_create.
+d. Name and id values of all threads are set using mythread_setspecific. 
+e. Each thread prints "Thread id: Hello World" message "id" number of times. The key values are also printed using the mythread_getspecific.
+f. Main thread joins on all the created threads using mythread_join.
+g. After each thread completes its execution, the thread exits by using mythread_exit.
+
+The test case selected checks thoroughly the working of all the implemented functions of the mythread library.
