@@ -132,4 +132,4 @@ e. Each thread prints "Thread id: Hello World" message "id" number of times. The
 f. Main thread joins on all the created threads using mythread_join.
 g. After each thread completes its execution, the thread exits by using mythread_exit.
 
-The test case selected checks thoroughly the working of all the implemented functions of the mythread library.
+The test case checks thoroughly the working of all the implemented functions of the mythread library.
